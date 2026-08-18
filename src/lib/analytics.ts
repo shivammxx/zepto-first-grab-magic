@@ -26,6 +26,16 @@ declare global {
 
 const SESSION_KEY = "zepto_match_session";
 const VISITOR_KEY = "zepto_match_returning";
+const LOG_KEY = "zepto_match_events";
+const LOG_LIMIT = 2000;
+
+export type TrackedEvent = {
+  event: WidgetEvent;
+  visitor_type: "first_time" | "returning";
+  session_id: string;
+  ts: string;
+  city?: string | null;
+} & Props;
 
 function id() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -68,8 +78,36 @@ export function track(event: WidgetEvent, props: Props = {}) {
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push(payload);
   window.gtag?.("event", event, payload);
+  appendToLog(payload as TrackedEvent);
 
   if (import.meta.env.DEV) {
     console.info("[analytics]", event, payload);
   }
+}
+
+/** Local event log so the in-app dashboard can compute funnel rates. */
+function appendToLog(payload: TrackedEvent) {
+  try {
+    const log = readEvents();
+    log.push(payload);
+    window.localStorage.setItem(LOG_KEY, JSON.stringify(log.slice(-LOG_LIMIT)));
+  } catch {
+    // storage full or unavailable — analytics must never break the widget
+  }
+}
+
+export function readEvents(): TrackedEvent[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(LOG_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as TrackedEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearEvents() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(LOG_KEY);
 }
