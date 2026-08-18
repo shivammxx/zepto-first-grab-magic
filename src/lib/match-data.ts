@@ -88,7 +88,7 @@ export type MatchResult = {
 };
 
 export function buildMatch(a: Answers): MatchResult {
-  const city = CITIES.find((c) => c.key === a.city) ?? CITIES[0];
+  const city = CITIES.find((c) => c.key === a.city) ?? CITIES[0]!;
   const needs = a.needs.length ? a.needs : (["milk", "midnight"] as NeedKey[]);
   const items = needs.flatMap((n) => BASKETS[n]).slice(0, 6);
   const total = items.reduce((s, i) => s + i.price, 0);
