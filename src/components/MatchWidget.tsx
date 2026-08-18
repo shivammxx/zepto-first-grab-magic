@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { markVisited, track } from "@/lib/analytics";
 import {
   CITIES,
   CURRENT_APPS,
@@ -24,6 +25,30 @@ export function MatchWidget() {
 
   const result = useMemo(() => buildMatch(answers), [answers]);
   const progress = Math.min(step, TOTAL_STEPS) / TOTAL_STEPS;
+
+  const startedAt = useRef<number>(Date.now());
+
+  useEffect(() => {
+    startedAt.current = Date.now();
+    track("widget_start", { entry_step: "city" });
+    markVisited();
+  }, []);
+
+  useEffect(() => {
+    if (step !== 4) return;
+    track("widget_estimate_shown", {
+      city: answers.city,
+      current_app: answers.app,
+      needs: answers.needs.join(","),
+      trips_per_week: answers.tripsPerWeek,
+      eta_minutes: result.eta,
+      basket_items: result.items.length,
+      basket_total: result.total,
+      payable: result.payable,
+      seconds_to_estimate: Math.round((Date.now() - startedAt.current) / 1000),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const toggleNeed = (key: NeedKey) =>
     setAnswers((a) => ({
@@ -67,6 +92,7 @@ export function MatchWidget() {
                 selected={answers.city === c.key}
                 onClick={() => {
                   setAnswers((a) => ({ ...a, city: c.key as CityKey }));
+                  track("widget_city_selected", { city: c.key, eta_minutes: c.eta, stores: c.stores });
                   setStep(1);
                 }}
               >
@@ -93,6 +119,7 @@ export function MatchWidget() {
                 selected={answers.app === app.key}
                 onClick={() => {
                   setAnswers((a) => ({ ...a, app: app.key }));
+                  track("widget_current_app_selected", { current_app: app.key });
                   setStep(2);
                 }}
               >
@@ -122,7 +149,16 @@ export function MatchWidget() {
               </Choice>
             ))}
           </div>
-          <PrimaryButton disabled={answers.needs.length === 0} onClick={() => setStep(3)}>
+          <PrimaryButton
+            disabled={answers.needs.length === 0}
+            onClick={() => {
+              track("widget_needs_captured", {
+                needs: answers.needs.join(","),
+                needs_count: answers.needs.length,
+              });
+              setStep(3);
+            }}
+          >
             {answers.needs.length === 0
               ? "Pick at least one"
               : `Continue with ${answers.needs.length} pick${answers.needs.length > 1 ? "s" : ""}`}
@@ -158,7 +194,14 @@ export function MatchWidget() {
               <span>10+</span>
             </div>
           </div>
-          <PrimaryButton onClick={() => setStep(4)}>See my 10-minute match</PrimaryButton>
+          <PrimaryButton
+            onClick={() => {
+              track("widget_trips_captured", { trips_per_week: answers.tripsPerWeek });
+              setStep(4);
+            }}
+          >
+            See my 10-minute match
+          </PrimaryButton>
           <BackLink onClick={() => setStep(2)} />
         </StepShell>
       )}
@@ -220,7 +263,25 @@ export function MatchWidget() {
           </div>
 
           <div className="sticky bottom-3 mt-4">
-            <PrimaryButton onClick={() => setAdded(true)}>
+            <PrimaryButton
+              onClick={() => {
+                track("widget_cta_clicked", {
+                  city: answers.city,
+                  basket_items: result.items.length,
+                  payable: result.payable,
+                  discount: result.firstOrderOff,
+                });
+                track("widget_cart_confirmed", {
+                  city: answers.city,
+                  basket_items: result.items.length,
+                  basket_total: result.total,
+                  payable: result.payable,
+                  eta_minutes: result.eta,
+                  seconds_to_cart: Math.round((Date.now() - startedAt.current) / 1000),
+                });
+                setAdded(true);
+              }}
+            >
               Add basket to cart · pay ₹{result.payable}
             </PrimaryButton>
             <p className="mt-2 text-center text-[11px] text-muted-foreground">
@@ -229,8 +290,10 @@ export function MatchWidget() {
           </div>
           <button
             onClick={() => {
+              track("widget_restarted", { from_step: step });
               setStep(0);
               setAnswers({ city: null, app: null, needs: [], tripsPerWeek: 3 });
+              startedAt.current = Date.now();
             }}
             className="mx-auto mt-3 block text-[12px] font-semibold text-muted-foreground underline"
           >
