@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { markVisited, track } from "@/lib/analytics";
+import { CheckoutForm, type DeliveryDetails } from "@/components/CheckoutForm";
 import {
   CITIES,
   CURRENT_APPS,
@@ -15,7 +16,9 @@ const TOTAL_STEPS = 4;
 
 export function MatchWidget() {
   const [step, setStep] = useState(0);
-  const [added, setAdded] = useState(false);
+  const [stage, setStage] = useState<"quiz" | "added" | "checkout" | "placed">("quiz");
+  const [details, setDetails] = useState<DeliveryDetails | null>(null);
+  const added = stage !== "quiz";
   const [answers, setAnswers] = useState<Answers>({
     city: null,
     app: null,
@@ -61,10 +64,10 @@ export function MatchWidget() {
     }));
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 pb-10">
-      <div className="sticky top-0 z-10 -mx-4 bg-background/85 px-4 pb-3 pt-4 backdrop-blur">
+    <div className="mx-auto w-full max-w-md px-4 pb-10 sm:max-w-2xl sm:px-6 lg:max-w-5xl lg:px-8">
+      <div className="sticky top-0 z-10 -mx-4 bg-background/85 px-4 pb-3 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex items-center justify-between">
-          <span className="font-display text-lg font-extrabold tracking-tight text-primary">
+          <span className="font-display text-lg font-extrabold tracking-tight text-primary sm:text-xl">
             zepto
           </span>
           <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-secondary-foreground">
@@ -85,7 +88,7 @@ export function MatchWidget() {
           title="Where are you ordering from?"
           sub="We only show what's actually stocked near you."
         >
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {CITIES.map((c) => (
               <Choice
                 key={c.key}
@@ -112,7 +115,7 @@ export function MatchWidget() {
           title="How do you shop for groceries today?"
           sub="So we can compare like for like."
         >
-          <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {CURRENT_APPS.map((app) => (
               <Choice
                 key={app.key}
@@ -137,7 +140,7 @@ export function MatchWidget() {
           title="What do you run out of most?"
           sub="Pick up to 3. This builds your basket."
         >
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {NEEDS.map((n) => (
               <Choice
                 key={n.key}
@@ -207,7 +210,7 @@ export function MatchWidget() {
       )}
 
       {step === 4 && !added && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 pt-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-bottom-2 pt-5 duration-300 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
           <div
             className="rounded-3xl p-5 text-primary-foreground shadow-[var(--shadow-lift)]"
             style={{ background: "var(--gradient-hero)" }}
@@ -225,7 +228,7 @@ export function MatchWidget() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+          <div className="mt-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-card)] lg:mt-0 lg:row-span-2">
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-base font-extrabold">Your starter basket</h3>
               <span className="text-[11px] text-muted-foreground">
@@ -262,7 +265,7 @@ export function MatchWidget() {
             </div>
           </div>
 
-          <div className="sticky bottom-3 mt-4">
+          <div className="sticky bottom-3 mt-4 lg:static">
             <PrimaryButton
               onClick={() => {
                 track("widget_cta_clicked", {
@@ -279,7 +282,7 @@ export function MatchWidget() {
                   eta_minutes: result.eta,
                   seconds_to_cart: Math.round((Date.now() - startedAt.current) / 1000),
                 });
-                setAdded(true);
+                setStage("added");
               }}
             >
               Add basket to cart · pay ₹{result.payable}
@@ -302,8 +305,8 @@ export function MatchWidget() {
         </div>
       )}
 
-      {added && (
-        <div className="animate-in fade-in zoom-in-95 pt-10 text-center duration-300">
+      {stage === "added" && (
+        <div className="animate-in fade-in zoom-in-95 mx-auto max-w-md pt-10 text-center duration-300">
           <div className="mx-auto grid size-16 place-items-center rounded-full bg-success text-2xl text-success-foreground">
             ✓
           </div>
@@ -315,14 +318,60 @@ export function MatchWidget() {
             confirm your address.
           </p>
           <div className="mt-6 space-y-2">
-            <PrimaryButton onClick={() => setAdded(false)}>Checkout · ₹{result.payable}</PrimaryButton>
+            <PrimaryButton onClick={() => setStage("checkout")}>
+              Add address &amp; checkout · ₹{result.payable}
+            </PrimaryButton>
             <button
-              onClick={() => setAdded(false)}
+              onClick={() => setStage("quiz")}
               className="w-full rounded-2xl border border-border bg-card px-5 py-3 text-sm font-semibold"
             >
               Back to basket
             </button>
           </div>
+        </div>
+      )}
+
+      {stage === "checkout" && (
+        <CheckoutForm
+          eta={result.eta}
+          payable={result.payable}
+          city={answers.city}
+          onBack={() => setStage("added")}
+          onConfirmed={(d) => {
+            setDetails(d);
+            setStage("placed");
+          }}
+        />
+      )}
+
+      {stage === "placed" && (
+        <div className="animate-in fade-in zoom-in-95 mx-auto max-w-md pt-10 text-center duration-300">
+          <div className="mx-auto grid size-16 place-items-center rounded-full bg-success text-2xl text-success-foreground">
+            ✓
+          </div>
+          <h2 className="mt-4 font-display text-2xl font-extrabold">
+            Order placed · arriving in {result.eta} min
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            ₹{result.payable} paid on delivery. We&apos;ll text +91 {details?.phone} with live
+            tracking.
+          </p>
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-left text-[13px]">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              {details?.label} address
+            </p>
+            <p className="mt-1 font-semibold">{details?.name}</p>
+            <p className="text-muted-foreground">
+              {details?.flat}, {details?.area}
+              {details?.landmark ? `, ${details.landmark}` : ""} — {details?.pincode}
+            </p>
+          </div>
+          <button
+            onClick={() => setStage("added")}
+            className="mt-4 w-full rounded-2xl border border-border bg-card px-5 py-3 text-sm font-semibold"
+          >
+            Edit address
+          </button>
           <Link
             to="/strategy"
             className="mt-6 inline-block text-[12px] font-semibold text-accent underline"
