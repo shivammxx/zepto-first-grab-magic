@@ -17,7 +17,7 @@ const addressSchema = z.object({
 
 export type DeliveryDetails = z.infer<typeof addressSchema>;
 
-type Errors = Partial<Record<keyof DeliveryDetails, string>>;
+type Errors = { [K in keyof DeliveryDetails]?: string | undefined };
 
 export function CheckoutForm({
   eta,
@@ -201,7 +201,7 @@ function Field({
   children,
 }: {
   label: string;
-  error?: string;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
