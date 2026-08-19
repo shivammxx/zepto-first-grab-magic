@@ -1,20 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MatchWidget } from "@/components/MatchWidget";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Zepto 10-Minute Match | Build your first basket in 60 seconds" },
+      { title: "Zepto | Groceries delivered in 10 minutes" },
       {
         name: "description",
         content:
-          "Answer 4 quick questions and see your personalised Zepto starter basket, real delivery ETA and first-order savings. Mobile web, no app download.",
+          "Check your real delivery ETA by pincode, see how Zepto's dark-store network pulls off 10-minute delivery, and why it beats the usual 45-minute wait.",
       },
-      { property: "og:title", content: "Zepto 10-Minute Match" },
+      { property: "og:title", content: "Zepto | Groceries delivered in 10 minutes" },
       {
         property: "og:description",
         content:
-          "A 60-second interactive widget that turns first-time Zepto visitors into an add-to-cart with a personalised starter basket.",
+          "Still waiting 45 minutes for your order? Check your pincode and see how fast Zepto actually delivers.",
       },
     ],
   }),
@@ -22,9 +22,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return (
-    <main className="min-h-screen bg-background font-sans">
-      <MatchWidget />
-    </main>
-  );
+  return <LandingPage />;
 }
