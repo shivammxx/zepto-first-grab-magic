@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { markVisited, track } from "@/lib/analytics";
+import { CheckoutForm, type DeliveryDetails } from "@/components/CheckoutForm";
 import {
   CITIES,
   CURRENT_APPS,
@@ -15,7 +16,9 @@ const TOTAL_STEPS = 4;
 
 export function MatchWidget() {
   const [step, setStep] = useState(0);
-  const [added, setAdded] = useState(false);
+  const [stage, setStage] = useState<"quiz" | "added" | "checkout" | "placed">("quiz");
+  const [details, setDetails] = useState<DeliveryDetails | null>(null);
+  const added = stage !== "quiz";
   const [answers, setAnswers] = useState<Answers>({
     city: null,
     app: null,
@@ -61,10 +64,10 @@ export function MatchWidget() {
     }));
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 pb-10">
-      <div className="sticky top-0 z-10 -mx-4 bg-background/85 px-4 pb-3 pt-4 backdrop-blur">
+    <div className="mx-auto w-full max-w-md px-4 pb-10 sm:max-w-2xl sm:px-6 lg:max-w-5xl lg:px-8">
+      <div className="sticky top-0 z-10 -mx-4 bg-background/85 px-4 pb-3 pt-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex items-center justify-between">
-          <span className="font-display text-lg font-extrabold tracking-tight text-primary">
+          <span className="font-display text-lg font-extrabold tracking-tight text-primary sm:text-xl">
             zepto
           </span>
           <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-secondary-foreground">
@@ -85,7 +88,7 @@ export function MatchWidget() {
           title="Where are you ordering from?"
           sub="We only show what's actually stocked near you."
         >
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {CITIES.map((c) => (
               <Choice
                 key={c.key}
@@ -112,7 +115,7 @@ export function MatchWidget() {
           title="How do you shop for groceries today?"
           sub="So we can compare like for like."
         >
-          <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {CURRENT_APPS.map((app) => (
               <Choice
                 key={app.key}
@@ -137,7 +140,7 @@ export function MatchWidget() {
           title="What do you run out of most?"
           sub="Pick up to 3. This builds your basket."
         >
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {NEEDS.map((n) => (
               <Choice
                 key={n.key}
