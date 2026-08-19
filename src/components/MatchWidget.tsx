@@ -210,7 +210,7 @@ export function MatchWidget() {
       )}
 
       {step === 4 && !added && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 pt-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-bottom-2 pt-5 duration-300 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
           <div
             className="rounded-3xl p-5 text-primary-foreground shadow-[var(--shadow-lift)]"
             style={{ background: "var(--gradient-hero)" }}
@@ -228,7 +228,7 @@ export function MatchWidget() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+          <div className="mt-4 rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-card)] lg:mt-0 lg:row-span-2">
             <div className="flex items-baseline justify-between">
               <h3 className="font-display text-base font-extrabold">Your starter basket</h3>
               <span className="text-[11px] text-muted-foreground">
@@ -265,7 +265,7 @@ export function MatchWidget() {
             </div>
           </div>
 
-          <div className="sticky bottom-3 mt-4">
+          <div className="sticky bottom-3 mt-4 lg:static">
             <PrimaryButton
               onClick={() => {
                 track("widget_cta_clicked", {
