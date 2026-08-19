@@ -282,7 +282,7 @@ export function MatchWidget() {
                   eta_minutes: result.eta,
                   seconds_to_cart: Math.round((Date.now() - startedAt.current) / 1000),
                 });
-                setAdded(true);
+                setStage("added");
               }}
             >
               Add basket to cart · pay ₹{result.payable}
@@ -305,8 +305,8 @@ export function MatchWidget() {
         </div>
       )}
 
-      {added && (
-        <div className="animate-in fade-in zoom-in-95 pt-10 text-center duration-300">
+      {stage === "added" && (
+        <div className="animate-in fade-in zoom-in-95 mx-auto max-w-md pt-10 text-center duration-300">
           <div className="mx-auto grid size-16 place-items-center rounded-full bg-success text-2xl text-success-foreground">
             ✓
           </div>
@@ -318,14 +318,60 @@ export function MatchWidget() {
             confirm your address.
           </p>
           <div className="mt-6 space-y-2">
-            <PrimaryButton onClick={() => setAdded(false)}>Checkout · ₹{result.payable}</PrimaryButton>
+            <PrimaryButton onClick={() => setStage("checkout")}>
+              Add address &amp; checkout · ₹{result.payable}
+            </PrimaryButton>
             <button
-              onClick={() => setAdded(false)}
+              onClick={() => setStage("quiz")}
               className="w-full rounded-2xl border border-border bg-card px-5 py-3 text-sm font-semibold"
             >
               Back to basket
             </button>
           </div>
+        </div>
+      )}
+
+      {stage === "checkout" && (
+        <CheckoutForm
+          eta={result.eta}
+          payable={result.payable}
+          city={answers.city}
+          onBack={() => setStage("added")}
+          onConfirmed={(d) => {
+            setDetails(d);
+            setStage("placed");
+          }}
+        />
+      )}
+
+      {stage === "placed" && (
+        <div className="animate-in fade-in zoom-in-95 mx-auto max-w-md pt-10 text-center duration-300">
+          <div className="mx-auto grid size-16 place-items-center rounded-full bg-success text-2xl text-success-foreground">
+            ✓
+          </div>
+          <h2 className="mt-4 font-display text-2xl font-extrabold">
+            Order placed · arriving in {result.eta} min
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            ₹{result.payable} paid on delivery. We&apos;ll text +91 {details?.phone} with live
+            tracking.
+          </p>
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4 text-left text-[13px]">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              {details?.label} address
+            </p>
+            <p className="mt-1 font-semibold">{details?.name}</p>
+            <p className="text-muted-foreground">
+              {details?.flat}, {details?.area}
+              {details?.landmark ? `, ${details.landmark}` : ""} — {details?.pincode}
+            </p>
+          </div>
+          <button
+            onClick={() => setStage("added")}
+            className="mt-4 w-full rounded-2xl border border-border bg-card px-5 py-3 text-sm font-semibold"
+          >
+            Edit address
+          </button>
           <Link
             to="/strategy"
             className="mt-6 inline-block text-[12px] font-semibold text-accent underline"
